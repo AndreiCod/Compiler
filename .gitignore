@@ -1,0 +1,10 @@
+
+.vscode/
+
+bin/
+
+obj/
+
+# Codeblocks
+*.layout
+*.depend
