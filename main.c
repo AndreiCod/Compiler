@@ -8,7 +8,7 @@
 
 int main(int argc, char **argv)
 {
-    char *inbuf = loadFile("tests/testparser.c");
+    char *inbuf = loadFile("tests/testad.c");
     puts(inbuf);
 
     // Tokenize the input
@@ -16,15 +16,14 @@ int main(int argc, char **argv)
     // showTokens(tokens);
 
     // Create the global symbol table
-    // pushDomain();
+    pushDomain();
 
     // Parse the tokens
     parse(tokens);
 
     // Show the symbol table
-    // showDomain(symTable, "global");
-    // dropDomain();
+    showDomain(symTable, "global");
+    //dropDomain();
 
     return 0;
 }
-
