@@ -391,27 +391,31 @@ bool stm()
 			{
 				if (!canBeScalar(&rCond))
 					tkerr("the if condition must be a scalar value");
-			}
-			if (consume(RPAR))
-			{
-				if (stm())
+
+				if (consume(RPAR))
 				{
-					if (consume(ELSE))
+					if (stm())
 					{
-						if (stm())
+						if (consume(ELSE))
+						{
+							if (stm())
+							{
+								return true;
+							}
+						}
+						else
 						{
 							return true;
 						}
 					}
-					else
-					{
-						return true;
-					}
 				}
+				else
+					tkerr("expected ')'");
 			}
+			else
+				tkerr("expected expression");
 		}
 	}
-	iTk = start;
 	if (consume(WHILE))
 	{
 		if (consume(LPAR))
@@ -420,17 +424,23 @@ bool stm()
 			{
 				if (!canBeScalar(&rCond))
 					tkerr("the while condition must be a scalar value");
-			}
-			if (consume(RPAR))
-			{
-				if (stm())
+
+				if (consume(RPAR))
 				{
-					return true;
+					if (stm())
+					{
+						return true;
+					}
+					else
+						tkerr("expected statement");
 				}
+				else
+					tkerr("expected ')'");
 			}
+			else
+				tkerr("expected expression");
 		}
 	}
-	iTk = start;
 	if (consume(RETURN))
 	{
 		if (expr(&rExpr))
@@ -451,16 +461,14 @@ bool stm()
 		{
 			return true;
 		}
+		else
+			tkerr("expected semicolon");
 	}
-	iTk = start;
-	if (expr(&rExpr))
+	expr(&rExpr);
+	if (consume(SEMICOLON))
 	{
-		if (consume(SEMICOLON))
-		{
-			return true;
-		}
+		return true;
 	}
-
 	iTk = start;
 	return false;
 }
@@ -483,7 +491,6 @@ bool stmCompound(bool newDomain)
 			return true;
 		}
 	}
-
 	iTk = start;
 	return false;
 }
@@ -624,12 +631,14 @@ bool exprAndPrime(Ret *r)
 		Ret right;
 		if (exprEq(&right))
 		{
-			Type tDst;
-			if (!arithTypeTo(&r->type, &right.type, &tDst))
-				tkerr(iTk, "invalid operand type for &&");
-			*r = (Ret){{TB_INT, NULL, -1}, false, true};
-			exprAndPrime(r);
-			return true;
+			if (exprAndPrime(r))
+			{
+				Type tDst;
+				if (!arithTypeTo(&r->type, &right.type, &tDst))
+					tkerr(iTk, "invalid operand type for &&");
+				*r = (Ret){{TB_INT, NULL, -1}, false, true};
+				return true;
+			}
 		}
 	}
 	return true;
@@ -666,12 +675,14 @@ bool exprEqPrime(Ret *r)
 		Ret right;
 		if (exprRel(&right))
 		{
-			Type tDst;
-			if (!arithTypeTo(&r->type, &right.type, &tDst))
-				tkerr(iTk, "invalid operand type for == or !=");
-			*r = (Ret){{TB_INT, NULL, -1}, false, true};
-			exprEqPrime(r);
-			return true;
+			if (exprEqPrime(r))
+			{
+				Type tDst;
+				if (!arithTypeTo(&r->type, &right.type, &tDst))
+					tkerr(iTk, "invalid operand type for == or !=");
+				*r = (Ret){{TB_INT, NULL, -1}, false, true};
+				return true;
+			}
 		}
 	}
 	return true;
@@ -708,12 +719,14 @@ bool exprRelPrime(Ret *r)
 		Ret right;
 		if (exprAdd(&right))
 		{
-			Type tDst;
-			if (!arithTypeTo(&r->type, &right.type, &tDst))
-				tkerr(iTk, "invalid operand type for <, <=, >, >=");
-			*r = (Ret){{TB_INT, NULL, -1}, false, true};
-			exprRelPrime(r);
-			return true;
+			if (exprRelPrime(r))
+			{
+				Type tDst;
+				if (!arithTypeTo(&r->type, &right.type, &tDst))
+					tkerr(iTk, "invalid operand type for <, <=, >, >=");
+				*r = (Ret){{TB_INT, NULL, -1}, false, true};
+				return true;
+			}
 		}
 	}
 	return true;
@@ -750,12 +763,14 @@ bool exprAddPrime(Ret *r)
 		Ret right;
 		if (exprMul(&right))
 		{
-			Type tDst;
-			if (!arithTypeTo(&r->type, &right.type, &tDst))
-				tkerr(iTk, "invalid operand type for + or -");
-			*r = (Ret){tDst, false, true};
-			exprAddPrime(r);
-			return true;
+			if (exprAddPrime(r))
+			{
+				Type tDst;
+				if (!arithTypeTo(&r->type, &right.type, &tDst))
+					tkerr(iTk, "invalid operand type for + or -");
+				*r = (Ret){tDst, false, true};
+				return true;
+			}
 		}
 	}
 	return true;
@@ -792,12 +807,14 @@ bool exprMulPrime(Ret *r)
 		Ret right;
 		if (exprCast(&right))
 		{
-			Type tDst;
-			if (!arithTypeTo(&r->type, &right.type, &tDst))
-				tkerr(iTk, "invalid operand type for * or /");
-			*r = (Ret){tDst, false, true};
-			exprMulPrime(r);
-			return true;
+			if (exprMulPrime(r))
+			{
+				Type tDst;
+				if (!arithTypeTo(&r->type, &right.type, &tDst))
+					tkerr(iTk, "invalid operand type for * or /");
+				*r = (Ret){tDst, false, true};
+				return true;
+			}
 		}
 	}
 	return true;
@@ -829,12 +846,12 @@ bool exprCast(Ret *r)
 	if (consume(LPAR))
 	{
 		Type t;
+		Ret op;
 		if (typeBase(&t))
 		{
 			arrayDecl(&t);
 			if (consume(RPAR))
 			{
-				Ret op;
 				if (exprCast(&op))
 				{
 					if (t.tb == TB_STRUCT)
@@ -931,7 +948,6 @@ bool exprPostfix(Ret *r)
 
 bool exprPostfixPrime(Ret *r)
 {
-	Token *start = iTk;
 	if (consume(LBRACKET))
 	{
 		Ret idx;
@@ -949,14 +965,12 @@ bool exprPostfixPrime(Ret *r)
 					r->type.n = -1;
 					r->lval = true;
 					r->ct = false;
-
 					return true;
 				}
 			}
 		}
 	}
-	iTk = start;
-	if (consume(DOT))
+	else if (consume(DOT))
 	{
 		Token *tkName = iTk;
 		if (consume(ID))
@@ -969,12 +983,10 @@ bool exprPostfixPrime(Ret *r)
 				if (!s)
 					tkerr(iTk, "the structure %s does not have a field %s", r->type.s->name, tkName->text);
 				*r = (Ret){s->type, true, s->type.n >= 0};
-
 				return true;
 			}
 		}
 	}
-	iTk = start;
 	return true;
 }
 
@@ -1080,32 +1092,27 @@ bool exprPrimary(Ret *r)
 			return true;
 		}
 	}
-	iTk = start;
-	if (consume(INT))
+	else if (consume(INT))
 	{
 		*r = (Ret){{TB_INT, NULL, -1}, false, true};
 		return true;
 	}
-	iTk = start;
-	if (consume(DOUBLE))
+	else if (consume(DOUBLE))
 	{
 		*r = (Ret){{TB_DOUBLE, NULL, -1}, false, true};
 		return true;
 	}
-	iTk = start;
-	if (consume(CHAR))
+	else if (consume(CHAR))
 	{
 		*r = (Ret){{TB_CHAR, NULL, -1}, false, true};
 		return true;
 	}
-	iTk = start;
-	if (consume(STRING))
+	else if (consume(STRING))
 	{
 		*r = (Ret){{TB_CHAR, NULL, 0}, false, true};
 		return true;
 	}
-	iTk = start;
-	if (consume(LPAR))
+	else if (consume(LPAR))
 	{
 		if (expr(r))
 		{
@@ -1113,8 +1120,12 @@ bool exprPrimary(Ret *r)
 				return true;
 		}
 	}
-	iTk = start;
-	return false;
+	else
+	{
+		iTk = start;
+		return false;
+	}
+	return true;
 }
 
 // parse function
