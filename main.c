@@ -8,12 +8,12 @@
 
 int main(int argc, char **argv)
 {
-    char *inbuf = loadFile("tests/testad.c");
+    char *inbuf = loadFile("tests/testat.c");
     puts(inbuf);
 
     // Tokenize the input
     Token *tokens = tokenize(inbuf);
-    // showTokens(tokens);
+    showTokens(tokens);
 
     // Create the global symbol table
     pushDomain();
