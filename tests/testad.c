@@ -3,6 +3,8 @@ char y;
 double z;
 double p[100];
 
+int tmp;
+
 struct S1
 {
 	int i;
