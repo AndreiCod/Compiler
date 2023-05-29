@@ -58,6 +58,7 @@ bool consume(int code)
 	// printf("consume(%s)", tkCodeName(code));
 	if (iTk->code == code)
 	{
+
 		consumedTk = iTk;
 		iTk = iTk->next;
 		// printf(" => consumed\n");
@@ -592,7 +593,7 @@ bool exprOrPrime(Ret *r)
 			{
 				Type tDst;
 				if (!arithTypeTo(&r->type, &right.type, &tDst))
-					tkerr(iTk, "invalid operand type for ||");
+					tkerr("invalid operand type for ||");
 				*r = (Ret){{TB_INT, NULL, -1}, false, true};
 				return true;
 			}
@@ -634,7 +635,7 @@ bool exprAndPrime(Ret *r)
 			{
 				Type tDst;
 				if (!arithTypeTo(&r->type, &right.type, &tDst))
-					tkerr(iTk, "invalid operand type for &&");
+					tkerr("invalid operand type for &&");
 				*r = (Ret){{TB_INT, NULL, -1}, false, true};
 				return true;
 			}
@@ -678,7 +679,7 @@ bool exprEqPrime(Ret *r)
 			{
 				Type tDst;
 				if (!arithTypeTo(&r->type, &right.type, &tDst))
-					tkerr(iTk, "invalid operand type for == or !=");
+					tkerr("invalid operand type for == or !=");
 				*r = (Ret){{TB_INT, NULL, -1}, false, true};
 				return true;
 			}
@@ -722,7 +723,7 @@ bool exprRelPrime(Ret *r)
 			{
 				Type tDst;
 				if (!arithTypeTo(&r->type, &right.type, &tDst))
-					tkerr(iTk, "invalid operand type for <, <=, >, >=");
+					tkerr("invalid operand type for <, <=, >, >=");
 				*r = (Ret){{TB_INT, NULL, -1}, false, true};
 				return true;
 			}
@@ -766,7 +767,7 @@ bool exprAddPrime(Ret *r)
 			{
 				Type tDst;
 				if (!arithTypeTo(&r->type, &right.type, &tDst))
-					tkerr(iTk, "invalid operand type for + or -");
+					tkerr("invalid operand type for + or -");
 				*r = (Ret){tDst, false, true};
 				return true;
 			}
@@ -810,7 +811,7 @@ bool exprMulPrime(Ret *r)
 			{
 				Type tDst;
 				if (!arithTypeTo(&r->type, &right.type, &tDst))
-					tkerr(iTk, "invalid operand type for * or /");
+					tkerr("invalid operand type for * or /");
 				*r = (Ret){tDst, false, true};
 				return true;
 			}
@@ -848,23 +849,21 @@ bool exprCast(Ret *r)
 		Ret op;
 		if (typeBase(&t))
 		{
-			if (arrayDecl(&t))
+			arrayDecl(&t);
+			if (consume(RPAR))
 			{
-				if (consume(RPAR))
+				if (exprCast(&op))
 				{
-					if (exprCast(&op))
-					{
-						if (t.tb == TB_STRUCT)
-							tkerr(iTk, "cannot convert to a struct type");
-						if (op.type.tb == TB_STRUCT)
-							tkerr(iTk, "cannot convert a struct");
-						if (op.type.n >= 0 && t.n < 0)
-							tkerr(iTk, "an array can be converted only to another array");
-						if (op.type.n < 0 && t.n >= 0)
-							tkerr(iTk, "a scalar can be converted only to another scalar");
-						*r = (Ret){t, false, true};
-						return true;
-					}
+					if (t.tb == TB_STRUCT)
+						tkerr("cannot convert to a struct type");
+					if (op.type.tb == TB_STRUCT)
+						tkerr("cannot convert a struct");
+					if (op.type.n >= 0 && t.n < 0)
+						tkerr("an array can be converted only to another array");
+					if (op.type.n < 0 && t.n >= 0)
+						tkerr("a scalar can be converted only to another scalar");
+					*r = (Ret){t, false, true};
+					return true;
 				}
 			}
 		}
@@ -895,7 +894,7 @@ bool exprUnary(Ret *r)
 		if (exprUnary(r))
 		{
 			if (!canBeScalar(r))
-				tkerr(iTk, "unary - or ! must have a scalar operand");
+				tkerr("unary - or ! must have a scalar operand");
 			r->lval = false;
 			r->ct = true;
 			return true;
@@ -959,10 +958,10 @@ bool exprPostfixPrime(Ret *r)
 				if (exprPostfixPrime(r))
 				{
 					if (r->type.n < 0)
-						tkerr(iTk, "only an array can be indexed");
+						tkerr("only an array can be indexed");
 					Type tInt = {TB_INT, NULL, -1};
 					if (!convTo(&idx.type, &tInt))
-						tkerr(iTk, "the index is not convertible to int");
+						tkerr("the index is not convertible to int");
 					r->type.n = -1;
 					r->lval = true;
 					r->ct = false;
@@ -979,10 +978,10 @@ bool exprPostfixPrime(Ret *r)
 			if (exprPostfixPrime(r))
 			{
 				if (r->type.tb != TB_STRUCT)
-					tkerr(iTk, "a field can only be selected from a struct");
+					tkerr("a field can only be selected from a struct");
 				Symbol *s = findSymbolInList(r->type.s->structMembers, tkName->text);
 				if (!s)
-					tkerr(iTk, "the structure %s does not have a field %s", r->type.s->name, tkName->text);
+					tkerr("the structure %s does not have a field %s", r->type.s->name, tkName->text);
 				*r = (Ret){s->type, true, s->type.n >= 0};
 				return true;
 			}
@@ -1047,48 +1046,48 @@ bool exprPrimary(Ret *r)
 	{
 		Symbol *s = findSymbol(tkName->text);
 		if (!s)
-			tkerr(iTk, "undefined id: %s", tkName->text);
+			tkerr("undefined id: %s", tkName->text);
 		if (consume(LPAR))
 		{
 			if (s->kind != SK_FN)
-				tkerr(iTk, "only a function can be called");
+				tkerr("only a function can be called");
 			Ret rArg;
 			Symbol *param = s->fn.params;
 			if (expr(&rArg))
 			{
 				if (!param)
-					tkerr(iTk, "too many arguments in function call");
+					tkerr("too many arguments in function call");
 				if (!convTo(&rArg.type, &param->type)) // aici moare
-					tkerr(iTk, "in call, cannot convert the argument type to the parameter type");
+					tkerr("in call, cannot convert the argument type to the parameter type");
 				param = param->next;
 				while (consume(COMMA))
 				{
 					if (expr(&rArg))
 					{
 						if (!param)
-							tkerr(iTk, "too many arguments in function call");
+							tkerr("too many arguments in function call");
 						if (!convTo(&rArg.type, &param->type))
-							tkerr(iTk, "in call, cannot convert the argument type to the parameter type");
+							tkerr("in call, cannot convert the argument type to the parameter type");
 						param = param->next;
 					}
 					else
-						tkerr(iTk, "invalid expression after ,");
+						tkerr("invalid expression after ,");
 				}
 			}
 			if (consume(RPAR))
 			{
 				if (param)
-					tkerr(iTk, "too few arguments in function call");
+					tkerr("too few arguments in function call");
 				*r = (Ret){s->type, false, true};
 				return true;
 			}
 			else
-				tkerr(iTk, "invalid expression after (");
+				tkerr("invalid expression after (");
 		}
 		else
 		{
 			if (s->kind == SK_FN)
-				tkerr(iTk, "a function can only be called");
+				tkerr("a function can only be called");
 			*r = (Ret){s->type, true, s->type.n >= 0};
 		}
 	}
