@@ -955,9 +955,7 @@ bool exprPostfixPrime(Ret *r)
 		{
 			if (consume(RBRACKET))
 			{
-				if (exprPostfixPrime(r))
-				{
-					if (r->type.n < 0)
+				if (r->type.n < 0)
 						tkerr("only an array can be indexed");
 					Type tInt = {TB_INT, NULL, -1};
 					if (!convTo(&idx.type, &tInt))
@@ -965,6 +963,8 @@ bool exprPostfixPrime(Ret *r)
 					r->type.n = -1;
 					r->lval = true;
 					r->ct = false;
+				if (exprPostfixPrime(r))
+				{
 					return true;
 				}
 			}
@@ -975,14 +975,15 @@ bool exprPostfixPrime(Ret *r)
 		Token *tkName = iTk;
 		if (consume(ID))
 		{
-			if (exprPostfixPrime(r))
-			{
-				if (r->type.tb != TB_STRUCT)
+			if (r->type.tb != TB_STRUCT)
 					tkerr("a field can only be selected from a struct");
 				Symbol *s = findSymbolInList(r->type.s->structMembers, tkName->text);
 				if (!s)
 					tkerr("the structure %s does not have a field %s", r->type.s->name, tkName->text);
 				*r = (Ret){s->type, true, s->type.n >= 0};
+			if (exprPostfixPrime(r))
+			{
+
 				return true;
 			}
 		}
@@ -1133,4 +1134,3 @@ void parse(Token *tokens)
 		tkerr("syntax error");
 }
 
-// to add: error treatment, parse function
