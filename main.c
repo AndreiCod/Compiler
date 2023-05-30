@@ -8,22 +8,27 @@
 
 int main(int argc, char **argv)
 {
-    char *inbuf = loadFile("tests/testat.c");
-    puts(inbuf);
+    // char *inbuf = loadFile("tests/testat.c");
+    // puts(inbuf);
 
     // Tokenize the input
-    Token *tokens = tokenize(inbuf);
-    showTokens(tokens);
+    // Token *tokens = tokenize(inbuf);
+    // showTokens(tokens);
 
     // Create the global symbol table
     pushDomain();
 
+    vmInit();
+
     // Parse the tokens
-    parse(tokens);
+    // parse(tokens);
+
+    Instr *testCode = genTestProgram();
+    run(testCode);
 
     // Show the symbol table
-    showDomain(symTable, "global");
-    //dropDomain();
+    // showDomain(symTable, "global");
+    dropDomain();
 
     return 0;
 }

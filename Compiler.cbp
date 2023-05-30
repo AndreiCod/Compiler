@@ -54,6 +54,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="utils.h" />
+		<Unit filename="vm.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="vm.h" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>
