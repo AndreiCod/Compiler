@@ -18,12 +18,17 @@ int main(int argc, char **argv)
     // Create the global symbol table
     pushDomain();
 
+    // vmInit();
+
     // Parse the tokens
     parse(tokens);
 
+    // Instr *testCode = genTestProgram();
+    // run(testCode);
+
     // Show the symbol table
     showDomain(symTable, "global");
-    //dropDomain();
+    dropDomain();
 
     return 0;
 }
