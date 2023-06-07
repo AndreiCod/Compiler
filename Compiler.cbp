@@ -39,6 +39,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="at.h" />
+		<Unit filename="gc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="gc.h" />
 		<Unit filename="lexer.c">
 			<Option compilerVar="CC" />
 		</Unit>
